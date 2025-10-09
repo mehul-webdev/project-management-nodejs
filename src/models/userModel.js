@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
     },
+    role: {
+      type: String,
+      enum: ["admin", "manager", "developer", "scrumMaster", ""],
+      default: "",
+    },
     provider: {
       type: String,
       enum: ["local", "google"],
@@ -26,6 +31,7 @@ const userSchema = new mongoose.Schema(
     },
     profilePicture: {
       type: String,
+      default: "",
     },
   },
   { timestamps: true }

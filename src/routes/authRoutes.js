@@ -6,6 +6,7 @@ import {
   handleLogout,
   handleLogin,
 } from "../controllers/authController.js";
+import { generateJWTToken } from "../utils/generateJWT.js";
 
 const router = Router();
 
@@ -26,19 +27,22 @@ router.get(
   (req, res) => {
     const user = req.user;
 
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const userRole = user.role ? user.role : "";
+
+    const token = generateJWTToken(user._id, userRole);
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    res.redirect("http://localhost:3000/auth/loading");
+    if (userRole) {
+      res.redirect("http://localhost:3000/dashboard");
+    } else {
+      res.redirect("http://localhost:3000/update-profile");
+    }
   }
 );
 

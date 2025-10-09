@@ -1,24 +1,24 @@
-import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
-
-const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey";
+import { generateJWTToken } from "../utils/generateJWT.js";
 
 // Generate JWT
-
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: "1h" });
-};
 
 // Register a user
 export const handleRegister = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, firstName, lastName, role } = req.body;
+
+    const fullName = `${firstName} ${lastName}`;
 
     if (!email || !password) {
       return res
         .status(400)
         .json({ message: "Email and password are required" });
+    }
+
+    if (!role) {
+      return res.status(400).json({ message: "Role is required" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -27,9 +27,15 @@ export const handleRegister = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const user = await User.create({ email, password, provider: "email" });
+    const user = await User.create({
+      email,
+      password,
+      name: fullName,
+      provider: "local",
+      role,
+    });
 
-    const token = generateToken(user._id);
+    const token = generateJWTToken(user._id, role);
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -78,7 +84,7 @@ export const handleLogin = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const token = generateToken(user._id);
+    const token = generateJWTToken(user._id, role);
 
     res.cookie("token", token, {
       httpOnly: true,

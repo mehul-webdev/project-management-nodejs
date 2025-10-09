@@ -1,15 +1,14 @@
 import express from "express";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
 import connectDB from "./config/db.js";
 import cors from "cors";
 import session from "express-session";
 
-dotenv.config();
 connectDB();
 
 import passport from "./config/passport.js";
+import { updateTokenMiddleware } from "./middlewares/updateTokenMiddleware.js";
 
 const app = express();
 app.use(express.json());
@@ -37,5 +36,8 @@ app.use(passport.session());
 
 // Routes
 app.use("/api", routes);
+
+// Middlewares
+app.use(updateTokenMiddleware);
 
 export default app;
