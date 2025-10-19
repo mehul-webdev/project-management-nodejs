@@ -5,7 +5,6 @@ import cors from "cors";
 import passport from "./config/passport.js";
 import connectDB from "./config/db.js";
 import routes from "./routes/index.js";
-import { updateTokenMiddleware } from "./middlewares/updateTokenMiddleware.js";
 import morgan from "morgan";
 import helmet from "helmet";
 import dotenv from "dotenv";
@@ -33,20 +32,22 @@ app.use(cookieParser());
 // 🌐 CORS Configuration
 // =============================
 const allowedOrigins = [
+  "http://localhost:3000",
   "http://localhost:5173",
   "https://projectmanagementnextjs.netlify.app",
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like Postman)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(new Error("CORS not allowed"));
       }
     },
-    credentials: true, // important for cookies
+    credentials: true, // <-- important for cookies
   })
 );
 
@@ -56,12 +57,13 @@ app.use(
 // Required for passport to serialize/deserialize user
 app.use(
   session({
+    name: "sid", // cookie name
     secret: process.env.SESSION_SECRET || "supersecretkey",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production", // true on HTTPS (Netlify)
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // true only on HTTPS
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
@@ -75,10 +77,23 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // =============================
-// 📦 Routes & Middleware
+// 📦 Routes & Test Cookie
 // =============================
 app.use("/api", routes);
-// app.use(updateTokenMiddleware);
+
+// Test cookie route
+app.get("/test-cookie", (req, res) => {
+  console.log("Cookies:", req.cookies);
+  console.log("same site is", {
+    secure: process.env.NODE_ENV === "production", // true only on HTTPS
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  });
+  res.json({
+    cookies: req.cookies,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  });
+});
 
 // =============================
 // ⚠️ Error Handling Middleware
