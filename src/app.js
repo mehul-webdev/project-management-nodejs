@@ -57,17 +57,26 @@ app.use(
 // =============================
 // 🧠 Session Configuration
 // =============================
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET,
+//     resave: false,
+//     saveUninitialized: false,
+//     cookie: {
+//       secure: process.env.NODE_ENV === "production", // true for HTTPS
+//       httpOnly: true,
+//       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+//       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+//     },
+//   })
+// );
 app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production", // true for HTTPS
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    },
+  cors({
+    origin: [
+      "https://projectmanagementnextjs.netlify.app",
+      "http://localhost:5173",
+    ],
+    credentials: true, // VERY IMPORTANT
   })
 );
 
