@@ -6,40 +6,36 @@ import passport from "./config/passport.js";
 import connectDB from "./config/db.js";
 import routes from "./routes/index.js";
 import { updateTokenMiddleware } from "./middlewares/updateTokenMiddleware.js";
-import morgan from "morgan"; // For logging in dev
-import helmet from "helmet"; // For security headers
+import morgan from "morgan";
+import helmet from "helmet";
 import dotenv from "dotenv";
 
-dotenv.config(); // Load environment variables
+dotenv.config();
 
-// Initialize DB
+// Initialize MongoDB
 connectDB();
 
-// Create app
+// Create Express app
 const app = express();
 
 // =============================
 // 🔧 Middleware Configuration
 // =============================
-
-// Logging (only in development)
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-// Security headers
 app.use(helmet());
-
-// Body & Cookie parsers
 app.use(express.json());
 app.use(cookieParser());
 
 // =============================
 // 🌐 CORS Configuration
 // =============================
-const allowedOrigins = (process.env.CORS_ORIGINS || "")
-  .split(",")
-  .map((origin) => origin.trim());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://projectmanagementnextjs.netlify.app",
+];
 
 app.use(
   cors({
@@ -50,33 +46,25 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true,
+    credentials: true, // important for cookies
   })
 );
 
 // =============================
 // 🧠 Session Configuration
 // =============================
-// app.use(
-//   session({
-//     secret: process.env.SESSION_SECRET,
-//     resave: false,
-//     saveUninitialized: false,
-//     cookie: {
-//       secure: process.env.NODE_ENV === "production", // true for HTTPS
-//       httpOnly: true,
-//       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-//       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-//     },
-//   })
-// );
+// Required for passport to serialize/deserialize user
 app.use(
-  cors({
-    origin: [
-      "https://projectmanagementnextjs.netlify.app",
-      "http://localhost:5173",
-    ],
-    credentials: true, // VERY IMPORTANT
+  session({
+    secret: process.env.SESSION_SECRET || "supersecretkey",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // true on HTTPS (Netlify)
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    },
   })
 );
 
@@ -90,7 +78,7 @@ app.use(passport.session());
 // 📦 Routes & Middleware
 // =============================
 app.use("/api", routes);
-app.use(updateTokenMiddleware);
+// app.use(updateTokenMiddleware);
 
 // =============================
 // ⚠️ Error Handling Middleware
